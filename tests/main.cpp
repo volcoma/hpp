@@ -1,11 +1,11 @@
 #include "hpp/type_traits.hpp"
 #include "hpp/utility.hpp"
 
-
 #include <iostream>
 
 int main()
 {
+    int k = 12;
     constexpr int i = 0;
     constexpr_if(i == 0)
     {

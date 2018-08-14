@@ -2,7 +2,7 @@
 
 #include <type_traits>
 #include <utility>
-
+#include "invoke.hpp"
 namespace hpp
 {
 
@@ -19,12 +19,13 @@ struct caller_false
 		return {};
 	}
 };
+
 struct caller_true
 {
 	template <typename F>
-	caller_false call(bool_constant<true>, F&& f)
+	caller_false call(bool_constant<true> tag, F&& f)
 	{
-		f(std::true_type{});
+        f(tag);
 		return {};
 	}
 	template <typename F>
@@ -36,7 +37,11 @@ struct caller_true
 } // namespace cexpr
 } // namespace hpp
 
-#define constexpr_if(...) hpp::cexpr::caller_true().call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), [&](auto /*_cexrp_arg_*/)
-#define constexpr_else_if(...) ).call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), [&](auto /*_cexrp_arg_*/)
-#define constexpr_else ).call(hpp::cexpr::bool_constant<true>(),[&](auto /*_cexrp_arg_*/)
-#define constexpr_end_if )
+#define constexpr_impl_begin_branch [&](auto /*_cexrp_arg_*/)
+#define constexpr_impl_end_branch )
+
+#define constexpr_if(...) hpp::cexpr::caller_true().call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
+#define constexpr_else_if(...) constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
+#define constexpr_else constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<true>(), constexpr_impl_begin_branch
+#define constexpr_end_if constexpr_impl_end_branch
+
