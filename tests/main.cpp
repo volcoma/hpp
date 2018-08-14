@@ -20,7 +20,6 @@ int main()
     }
     end_if_constexpr;
 
-
     auto invokeable = [](int param)
     {
         std::cout << "invoked with " << param << std::endl;

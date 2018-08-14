@@ -25,9 +25,6 @@ struct caller_true
 	template <typename F>
 	caller_false call(bool_constant<true> tag, F&& f)
 	{
-		static_assert(std::is_same<void, std::result_of_t<F(bool_constant<true>)>>::value,
-					  "This version of 'if constexpr(...)' doesn't allow the usage of the "
-					  "following statements 'return', 'break', 'continue' and 'goto'");
 		f(tag);
 		return {};
 	}
@@ -37,11 +34,25 @@ struct caller_true
 		return {};
 	}
 };
+struct avoid_user_return
+{
+	explicit avoid_user_return() = default;
+
+	template <typename T, typename = std::enable_if_t<!std::is_same<T, avoid_user_return>::value>>
+	avoid_user_return(T&&)
+	{
+		constexpr const bool check = !std::is_same<T, T>::value;
+		static_assert(check, "It is forbidden to use a return statement in this if_constexpr(...) block.");
+		static_assert(check, "Forbidden statements are : 'return', 'break', 'continue' and 'goto'");
+	}
+};
 } // namespace cexpr
 } // namespace hpp
 
-#define constexpr_impl_begin_branch [&](auto)
-#define constexpr_impl_end_branch )
+#define constexpr_impl_begin_branch [&](auto) -> hpp::cexpr::avoid_user_return {
+#define constexpr_impl_end_branch                                                                            \
+	return hpp::cexpr::avoid_user_return{};                                                                  \
+	} )
 
 #define if_constexpr(...) hpp::cexpr::caller_true().call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
 #define else_if_constexpr(...) constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
