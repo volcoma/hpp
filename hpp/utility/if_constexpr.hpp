@@ -25,7 +25,10 @@ struct caller_true
 	template <typename F>
 	caller_false call(bool_constant<true> tag, F&& f)
 	{
-        f(tag);
+		static_assert(std::is_same<void, std::result_of_t<F(bool_constant<true>)>>::value,
+					  "This version of 'if constexpr(...)' doesn't allow the usage of the "
+					  "following statements 'return', 'break', 'continue' and 'goto'");
+		f(tag);
 		return {};
 	}
 	template <typename F>
@@ -37,11 +40,10 @@ struct caller_true
 } // namespace cexpr
 } // namespace hpp
 
-#define constexpr_impl_begin_branch [&](auto /*_cexrp_arg_*/)
+#define constexpr_impl_begin_branch [&](auto)
 #define constexpr_impl_end_branch )
 
 #define if_constexpr(...) hpp::cexpr::caller_true().call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
 #define else_if_constexpr(...) constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
 #define else_constexpr constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<true>(), constexpr_impl_begin_branch
 #define end_if_constexpr constexpr_impl_end_branch
-
