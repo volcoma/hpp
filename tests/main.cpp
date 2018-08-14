@@ -5,21 +5,20 @@
 
 int main()
 {
-    int k = 12;
     constexpr int i = 0;
-    constexpr_if(i == 0)
+    if_constexpr(i == 0)
     {
         std::cout << "case i == 0" << std::endl;
     }
-    constexpr_else_if(i == 1)
+    else_if_constexpr(i == 1)
     {
         std::cout << "case i == 1" << std::endl;
     }
-    constexpr_else
+    else_constexpr
     {
         std::cout << "case else" << std::endl;
     }
-    constexpr_end_if;
+    end_if_constexpr;
 
 
     auto invokeable = [](int param)

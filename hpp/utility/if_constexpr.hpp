@@ -40,8 +40,8 @@ struct caller_true
 #define constexpr_impl_begin_branch [&](auto /*_cexrp_arg_*/)
 #define constexpr_impl_end_branch )
 
-#define constexpr_if(...) hpp::cexpr::caller_true().call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
-#define constexpr_else_if(...) constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
-#define constexpr_else constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<true>(), constexpr_impl_begin_branch
-#define constexpr_end_if constexpr_impl_end_branch
+#define if_constexpr(...) hpp::cexpr::caller_true().call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
+#define else_if_constexpr(...) constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<(__VA_ARGS__)>(), constexpr_impl_begin_branch
+#define else_constexpr constexpr_impl_end_branch.call(hpp::cexpr::bool_constant<true>(), constexpr_impl_begin_branch
+#define end_if_constexpr constexpr_impl_end_branch
 
