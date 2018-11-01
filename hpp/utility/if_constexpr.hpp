@@ -42,8 +42,8 @@ struct avoid_user_return
 	avoid_user_return(T&&)
 	{
 		constexpr const bool check = !std::is_same<T, T>::value;
-		static_assert(check, "It is forbidden to use a return statement in this if_constexpr(...) block.");
-		static_assert(check, "Forbidden statements are : 'return', 'break', 'continue' and 'goto'");
+		static_assert(check, "It is forbidden to use a return statement in this if_constexpr(...) block."
+							 "Forbidden statements are : 'return', 'break', 'continue' and 'goto'");
 	}
 };
 } // namespace cexpr
