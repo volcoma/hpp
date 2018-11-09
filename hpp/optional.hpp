@@ -28,7 +28,7 @@ using std::bad_optional_access;
 #ifndef STX_HAVE_IN_PLACE_T
 using std::in_place;
 using std::in_place_t;
-#define STX_IN_PLACE_T 1
+#define STX_HAVE_IN_PLACE_T 1
 #endif
 using std::make_optional;
 using std::nullopt;
@@ -45,7 +45,7 @@ using std::experimental::bad_optional_access;
 using std::experimental::in_place;
 using std::experimental::in_place_t;
 
-#define STX_IN_PLACE_T 1
+#define STX_HAVE_IN_PLACE_T 1
 #endif
 using std::experimental::make_optional;
 using std::experimental::nullopt;
