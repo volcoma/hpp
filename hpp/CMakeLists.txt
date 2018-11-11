@@ -1,5 +1,3 @@
-file(GLOB_RECURSE libsrc *.h *.cpp *.hpp *.c *.cc)
-
 set(target_name hpp)
 
 add_library(${target_name} INTERFACE)
