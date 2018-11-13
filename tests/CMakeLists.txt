@@ -1,6 +1,6 @@
 message(STATUS "Enabled tests.")
 
-set(target_name hpp_tests)
+set(target_name hpp_test)
 
 file(GLOB_RECURSE libsrc *.h *.cpp *.hpp *.c *.cc)
 
@@ -13,3 +13,6 @@ set_target_properties(${target_name} PROPERTIES
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
+
+enable_testing()
+add_test(NAME ${target_name} COMMAND ${target_name})
