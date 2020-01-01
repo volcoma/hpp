@@ -5,10 +5,13 @@
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
+#include <cassert>
 
 namespace hpp
 {
 
+void* aligned_malloc(size_t size, size_t alignment);
+void aligned_free(void* ptr);
 /**
  * @class aligned_allocator
  * @brief Allocator for aligned memory
@@ -19,7 +22,7 @@ namespace hpp
  * @tparam T type of objects to allocate.
  * @tparam Align alignment in bytes.
  */
-template <class T, size_t Align = std::max(sizeof(void*), alignof(T))>
+template <class T, size_t Align = alignof(T)>
 class aligned_allocator
 {
 public:
@@ -30,7 +33,6 @@ public:
 
 	static_assert(Align > 0, "Alignment must be greater than 0");
 	static_assert(is_power_of_2(Align), "Alignment must be a power of 2");
-	static_assert(Align % sizeof(void*) == 0, "Alignment must be multiple of sizeof(void *)");
 
 	using value_type = T;
 	using pointer = T*;
@@ -39,8 +41,6 @@ public:
 	using const_reference = const T&;
 	using size_type = size_t;
 	using difference_type = ptrdiff_t;
-
-	static constexpr size_t alignment = Align;
 
 	template <class U>
 	struct rebind
@@ -53,22 +53,12 @@ public:
 
 	template <class U>
 	aligned_allocator(const aligned_allocator<U, Align>& rhs) noexcept;
-
 	~aligned_allocator();
-
-	pointer address(reference) noexcept;
-	const_pointer address(const_reference) const noexcept;
 
 	pointer allocate(size_type n, const void* hint = nullptr);
 	void deallocate(pointer p, size_type n);
 
 	size_type max_size() const noexcept;
-
-	template <class U, class... Args>
-	void construct(U* p, Args&&... args);
-
-	template <class U>
-	void destroy(U* p);
 };
 
 template <class T1, size_t Align1, class T2, size_t Align2>
@@ -77,8 +67,6 @@ bool operator==(const aligned_allocator<T1, Align1>& lhs, const aligned_allocato
 template <class T1, size_t Align1, class T2, size_t Align2>
 bool operator!=(const aligned_allocator<T1, Align1>& lhs, const aligned_allocator<T2, Align2>& rhs) noexcept;
 
-static void* aligned_malloc(size_t size, size_t alignment);
-static void aligned_free(void* ptr);
 /************************************
  * aligned_allocator implementation *
  ************************************/
@@ -109,28 +97,6 @@ inline aligned_allocator<T, A>::aligned_allocator(const aligned_allocator<U, A>&
  */
 template <class T, size_t A>
 inline aligned_allocator<T, A>::~aligned_allocator() = default;
-
-/**
- * Returns the actual address of \c r even in presence of overloaded \c operator&.
- * @param r the object to acquire address of.
- * @return the actual address of \c r.
- */
-template <class T, size_t A>
-inline auto aligned_allocator<T, A>::address(reference r) noexcept -> pointer
-{
-	return std::addressof(r);
-}
-
-/**
- * Returns the actual address of \c r even in presence of overloaded \c operator&.
- * @param r the object to acquire address of.
- * @return the actual address of \c r.
- */
-template <class T, size_t A>
-inline auto aligned_allocator<T, A>::address(const_reference r) const noexcept -> const_pointer
-{
-	return std::addressof(r);
-}
 
 /**
  * Allocates <tt>n * sizeof(T)</tt> bytes of uninitialized memory, aligned by \c A.
@@ -174,30 +140,6 @@ inline auto aligned_allocator<T, A>::max_size() const noexcept -> size_type
 }
 
 /**
- * Constructs an object of type \c T in allocated uninitialized memory
- * pointed to by \c p, using placement-new.
- * @param p pointer to allocated uninitialized memory.
- * @param args the constructor arguments to use.
- */
-template <class T, size_t A>
-template <class U, class... Args>
-inline void aligned_allocator<T, A>::construct(U* p, Args&&... args)
-{
-	new(p) U(std::forward<Args>(args)...);
-}
-
-/**
- * Calls the destructor of the object pointed to by \c p.
- * @param p pointer to the object that is going to be destroyed.
- */
-template <class T, size_t A>
-template <class U>
-inline void aligned_allocator<T, A>::destroy(U* p)
-{
-	p->~U();
-}
-
-/**
  * @defgroup allocator_comparison Comparison operators
  */
 
@@ -210,9 +152,9 @@ inline void aligned_allocator<T, A>::destroy(U* p)
  * @return true if the allocators have the same alignment.
  */
 template <class T1, size_t A1, class T2, size_t A2>
-inline bool operator==(const aligned_allocator<T1, A1>& lhs, const aligned_allocator<T2, A2>& rhs) noexcept
+inline bool operator==(const aligned_allocator<T1, A1>& /*lhs*/, const aligned_allocator<T2, A2>& /*rhs*/) noexcept
 {
-	return lhs.alignment == rhs.alignment;
+	return A1 == A2;
 }
 
 /**
@@ -232,19 +174,20 @@ inline bool operator!=(const aligned_allocator<T1, A1>& lhs, const aligned_alloc
 //****************************************
 //* aligned malloc / free implementation *
 //****************************************
-inline void* aligned_malloc(size_t size, size_t alignment)
+inline void* aligned_malloc(size_t required_bytes, size_t alignment)
 {
 	void* res = nullptr;
 	// we allocate extra bytes to keep the unaligned pointer there
 	// so we can access it fast for when we need to free it.
-	// Alignment must be multiple of sizeof(void *) and a power of 2
-	size_t malloc_size = size + alignment;
+	size_t offset = alignment - 1 + sizeof(void*);
+	size_t malloc_size = required_bytes + offset;
 	void* ptr = std::malloc(malloc_size);
 	if(ptr != nullptr && alignment != 0)
 	{
-		res = reinterpret_cast<void*>((reinterpret_cast<size_t>(ptr) & ~(size_t(alignment - 1))) + alignment);
+		res = reinterpret_cast<void*>((reinterpret_cast<size_t>(ptr) + offset)&~(size_t(alignment - 1)));
 		*(reinterpret_cast<void**>(res) - 1) = ptr;
 	}
+	assert(uintptr_t(res) % alignment == 0);
 
 	return res;
 }
