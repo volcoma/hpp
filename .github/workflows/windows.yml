@@ -15,7 +15,6 @@ jobs:
         - { os: "windows-2022", vc: "msvc2022", arch: "x86" }
         - { os: "windows-2022", vc: "msvc2022", arch: "x64" }
         
-        backend: ["MML", "SDL", "GLFW"]
     #name: "${{matrix.config.vc}} ${{matrix.config.arch}}"
     steps:
     - name: Setup
@@ -28,7 +27,7 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
     - name: Build
       run: |
-        cmake --preset windows-${{matrix.config.arch}}-${{matrix.config.vc}} -DBACKEND_TYPE=${{matrix.backend}}
+        cmake --preset windows-${{matrix.config.arch}}-${{matrix.config.vc}}
         cmake --build --preset windows-${{matrix.config.arch}}-${{matrix.config.vc}}-release
     - name: Test
       run: |
