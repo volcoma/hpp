@@ -3,7 +3,7 @@
 project(hpp)
 include(CTest)
 
-option(BUILD_HPP_TESTS "Build the tests" OFF)
+option(BUILD_HPP_TESTS "Build the tests" ON)
 
 if(BUILD_HPP_TESTS)
 	if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)

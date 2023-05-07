@@ -1,4 +1,4 @@
-name: darwin
+name: macos
 
 on: [push, pull_request]
 

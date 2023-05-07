@@ -1,10 +1,12 @@
-#include "hpp/type_traits.hpp"
-#include "hpp/utility.hpp"
-
+#include <hpp/type_traits.hpp>
+#include <hpp/utility.hpp>
+#include <hpp/type_name.hpp>
 #include <iostream>
 
 int main()
 {
+    static_assert(hpp::type_name<int>() == hpp::string_view("int"), "not working");
+
 	constexpr int i = 0;
 	if_constexpr(i == 0)
 	{
