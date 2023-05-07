@@ -24,7 +24,7 @@ jobs:
       with:
         submodules: true
     - name: Select MSVC
-      if: matrix.config.cc == 'mingw'
+      if: matrix.config.cc != 'mingw'
       uses: ilammy/msvc-dev-cmd@v1
     - name: Setup Compiler
       if: matrix.config.cc == 'mingw'
