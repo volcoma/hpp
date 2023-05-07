@@ -346,6 +346,11 @@
             "name": "windows-x64-msvc2022-release",
             "configuration": "Release",
             "configurePreset": "windows-x64-msvc2022"
+        },
+        {
+            "name": "windows-x64-mingw-release",
+            "configuration": "Release",
+            "configurePreset": "windows-x64-mingw"
         }
     ],
 
