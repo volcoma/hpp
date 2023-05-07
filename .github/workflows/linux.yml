@@ -36,4 +36,4 @@ jobs:
         cmake --build --preset linux-${{matrix.config.cc}}-release
     - name: Test
       run: |
-        ctest --preset macos-${{matrix.config.arch}}-release
+        ctest --preset linux-${{matrix.config.cc}}-release
