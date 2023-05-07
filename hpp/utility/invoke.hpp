@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <type_traits>
 #include <utility>
+#include <functional>
 namespace hpp
 {
 template <typename... Args>
@@ -102,6 +103,26 @@ invoke(F&& f,
 {
 	return detail::invoke(std::forward<F>(f), std::forward<Args>(args)...);
 }
+
+
+template <class C, typename Ret, typename... Ts>
+std::function<Ret(Ts...)> bind(C* c, Ret (C::*m)(Ts...))
+{
+    return [=](auto&&... args) { return (c->*m)(std::forward<decltype(args)>(args)...); };
+}
+
+template <class C, typename Ret, typename... Ts>
+std::function<Ret(Ts...)> bind(const C* c, Ret (C::*m)(Ts...) const)
+{
+    return [=](auto&&... args) { return (c->*m)(std::forward<decltype(args)>(args)...); };
+}
+
+template <class C, typename Ret, typename... Ts>
+std::function<Ret(Ts...)> bind(C* const c, Ret (C::*m)(Ts...) const)
+{
+    return [=](auto&&... args) { return (c->*m)(std::forward<decltype(args)>(args)...); };
+}
+
 
 // Conforming C++14 implementation (is also a valid C++11 implementation):
 namespace detail

@@ -6,13 +6,16 @@
 #define STX_NAMESPACE_NAME hpp
 #endif
 
+#include <version>
+
 // libstdc++ std::experimental::any only works in C++14 mode
 #if !defined(STX_NO_STD_ANY) && defined(__GNUC__) && (__cplusplus < 201402)
 #define STX_NO_STD_ANY
 #endif
 
-#if defined(__has_include) && !defined(STX_NO_STD_ANY)
-#if __has_include(<any>) && (__cplusplus > 201402)
+#if defined(__cpp_lib_any) && !defined(STX_NO_STD_ANY)
+//#if defined(__has_include) && !defined(STX_NO_STD_ANY)
+//#if __has_include(<any>) && (__cplusplus > 201402)
 #include <any>
 namespace STX_NAMESPACE_NAME
 {
@@ -30,8 +33,9 @@ using std::experimental::any_cast;
 using std::experimental::bad_any_cast;
 }
 #define STX_HAVE_STD_ANY 1
-#endif // __hasinclude(any)
-#endif // defined(__hasinclude)
+//#endif // __hasinclude(any)
+//#endif // defined(__hasinclude)
+#endif // defined(__cpp_lib_any)
 
 #ifndef STX_HAVE_STD_ANY
 
@@ -39,6 +43,8 @@ using std::experimental::bad_any_cast;
 #include <stdexcept>
 #include <type_traits>
 #include <typeinfo>
+
+#include "utility/if_constexpr.hpp"
 
 namespace STX_NAMESPACE_NAME
 {
@@ -368,12 +374,17 @@ private:
 	{
 		using T = typename std::decay<ValueType>::type;
 
-		this->vtable = vtable_for_type<T>();
+        this->vtable = vtable_for_type<T>();
 
-		if(requires_allocation<T>::value)
-			storage.dynamic = new T(std::forward<ValueType>(value));
-		else
-			new(&storage.stack) T(std::forward<ValueType>(value));
+        if_constexpr(requires_allocation<T>::value)
+        {
+            storage.dynamic = new T(std::forward<ValueType>(value));
+        }
+        else_constexpr
+        {
+            new(&storage.stack) T(std::forward<ValueType>(value));
+        }
+        end_if_constexpr;
 	}
 };
 

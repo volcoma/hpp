@@ -13,6 +13,8 @@
 #endif
 #endif
 
+//#include <version>
+//#if defined(__cpp_lib_string_view) && !defined(STX_NO_STD_VARIANT)
 #if defined(__has_include) && !defined(STX_NO_STD_STRING_VIEW)
 #if __has_include(<string_view>) && (__cplusplus > 201402)
 #include <string_view>
@@ -25,19 +27,21 @@ using std::u16string_view;
 using std::u32string_view;
 using std::wstring_view;
 }
-#elif __has_include(<experimental/string_view>)
-#include <experimental/string_view>
-#define STX_HAVE_STD_STRING_VIEW 1
-namespace STX_NAMESPACE_NAME
-{
-using std::experimental::basic_string_view;
-using std::experimental::string_view;
-using std::experimental::u16string_view;
-using std::experimental::u32string_view;
-using std::experimental::wstring_view;
-}
+// experinetal is not fully implemented we must use our impl
+//#elif __has_include(<experimental/string_view>)
+//#include <experimental/string_view>
+//#define STX_HAVE_STD_STRING_VIEW 1
+//namespace STX_NAMESPACE_NAME
+//{
+//using std::experimental::basic_string_view;
+//using std::experimental::string_view;
+//using std::experimental::u16string_view;
+//using std::experimental::u32string_view;
+//using std::experimental::wstring_view;
+//}
 #endif // (__has_include(<string_view>) || __has_include(<experimental/string_view>))
 #endif // __has_include
+//#endif //defined(__cpp_lib_string_view)
 
 #ifndef STX_HAVE_STD_STRING_VIEW
 
@@ -75,13 +79,53 @@ public:
 	}
 	charT ch_;
 };
+
 }
 
 template <typename charT, typename traits = std::char_traits<charT>>
 class basic_string_view
 {
 public:
+    template <class T>
+    struct ce_char_trait : traits {
+        using base_t = traits;
+        using size_t = std::size_t;
+        using char_type = typename base_t::char_type;
+
+        static STX_CONSTEXPR14 int compare(const char_type* s1, const char_type* s2, size_t n) noexcept {
+            for (size_t i = 0; i < n; ++i) {
+                if (!base_t::eq(s1[i], s2[i])){
+                    return s1[i] < s2[i] ? -1 : 1;
+                }
+            }
+
+            return 0;
+        }
+
+        static STX_CONSTEXPR14 std::size_t length(const char_type* s) noexcept {
+            const char_type* const a = s;
+            while (!base_t::eq(*s, char_type{})) {
+                ++s;
+            }
+
+            return std::size_t(s - a);
+        }
+
+        static STX_CONSTEXPR14 const char_type* find(const char_type* s, size_t n, const char_type& a) noexcept {
+            const char_type* const end = s + n;
+            for (; s != end; ++s) {
+                if (base_t::eq(*s, a)){
+                    return s;
+                }
+            }
+
+            return nullptr;
+        }
+    };
+
+
 	// types
+    typedef ce_char_trait<charT> traits_impl;
 	typedef traits traits_type;
 	typedef charT value_type;
 	typedef charT* pointer;
@@ -128,7 +172,7 @@ public:
 
 	constexpr basic_string_view(const charT* str)
 		: ptr_(str)
-		, len_(traits::length(str))
+		, len_(traits_impl::length(str))
 	{
 	}
 
@@ -198,7 +242,7 @@ public:
 
 	constexpr const_reference at(size_t pos) const
 	{
-		return pos >= len_ ? throw std::out_of_range("stx::string_view::at") : ptr_[pos];
+        return pos >= len_ ? throw std::out_of_range("hpp::string_view::at") : ptr_[pos];
 		//             if ( pos >= len_ )
 		//                 BOOST_THROW_EXCEPTION( std::out_of_range ( "stx::string_view::at" ) );
 		//             return ptr_[pos];
@@ -286,7 +330,7 @@ public:
 	STX_CONSTEXPR14 basic_string_view substr(size_type pos, size_type n = npos) const
 	{
 		if(pos > size())
-			throw std::out_of_range("string_view::substr");
+            throw std::out_of_range("string_view::substr");
 		if(n == npos || pos + n > size())
 			n = size() - pos;
 		return basic_string_view(data() + pos, n);
@@ -294,11 +338,11 @@ public:
 
 	STX_CONSTEXPR14 int compare(basic_string_view x) const noexcept
 	{
-		const int cmp = traits::compare(ptr_, x.ptr_, (std::min)(len_, x.len_));
+		const int cmp = traits_impl::compare(ptr_, x.ptr_, (std::min)(len_, x.len_));
 		return cmp != 0 ? cmp : (len_ == x.len_ ? 0 : len_ < x.len_ ? -1 : 1);
 	}
 
-	STX_CONSTEXPR14 int compare(size_type pos1, size_type n1, basic_string_view x) const noexcept
+	STX_CONSTEXPR14 int compare(size_type pos1, size_type n1, basic_string_view x) const
 	{
 		return substr(pos1, n1).compare(x);
 	}
@@ -327,23 +371,80 @@ public:
 	//  Searches
 	constexpr bool starts_with(charT c) const noexcept
 	{ // Boost extension
-		return !empty() && traits::eq(c, front());
+		return !empty() && traits_impl::eq(c, front());
 	}
 
 	constexpr bool starts_with(basic_string_view x) const noexcept
 	{ // Boost extension
-		return len_ >= x.len_ && traits::compare(ptr_, x.ptr_, x.len_) == 0;
+		return len_ >= x.len_ && traits_impl::compare(ptr_, x.ptr_, x.len_) == 0;
 	}
 
 	constexpr bool ends_with(charT c) const noexcept
 	{ // Boost extension
-		return !empty() && traits::eq(c, back());
+		return !empty() && traits_impl::eq(c, back());
 	}
 
 	constexpr bool ends_with(basic_string_view x) const noexcept
 	{ // Boost extension
-		return len_ >= x.len_ && traits::compare(ptr_ + len_ - x.len_, x.ptr_, x.len_) == 0;
+		return len_ >= x.len_ && traits_impl::compare(ptr_ + len_ - x.len_, x.ptr_, x.len_) == 0;
 	}
+
+
+    template<class It>
+    constexpr // required since C++17
+        typename std::iterator_traits<It>::difference_type
+    constexpr_do_distance(It first, It last, std::input_iterator_tag)
+    {
+        typename std::iterator_traits<It>::difference_type result = 0;
+        while (first != last) {
+            ++first;
+            ++result;
+        }
+        return result;
+    }
+
+    template<class It>
+    static
+    constexpr // required since C++17
+        typename std::iterator_traits<It>::difference_type
+    constexpr_do_distance(It first, It last, std::random_access_iterator_tag)
+    {
+        return last - first;
+    }
+
+
+
+    template<class It>
+    static
+    constexpr // since C++17
+        typename std::iterator_traits<It>::difference_type
+        constexpr_distance(It first, It last)
+    {
+        return constexpr_do_distance(first, last,
+                                   typename std::iterator_traits<It>::iterator_category());
+    }
+    template<class ForwardIt1, class ForwardIt2, class BinaryPredicate>
+    static
+    constexpr // since C++17
+        ForwardIt1 constexpr_search(ForwardIt1 first, ForwardIt1 last,
+                                ForwardIt2 s_first, ForwardIt2 s_last,
+                            BinaryPredicate p)
+    {
+        for (; ; ++first) {
+            ForwardIt1 it = first;
+            for (ForwardIt2 s_it = s_first; ; ++it, ++s_it) {
+                if (s_it == s_last) {
+                    return first;
+                }
+                if (it == last) {
+                    return last;
+                }
+                if (!p(*it, *s_it)) {
+                    break;
+                }
+            }
+        }
+    }
 
 	//  find
 	STX_CONSTEXPR14 size_type find(basic_string_view s, size_type pos = 0) const noexcept
@@ -353,10 +454,10 @@ public:
 		if(s.empty())
 			return pos;
 		const_iterator iter =
-			std::search(this->cbegin() + pos, this->cend(), s.cbegin(), s.cend(), traits::eq);
-		return iter == this->cend() ? npos : std::distance(this->cbegin(), iter);
+            constexpr_search(this->cbegin() + pos, this->cend(), s.cbegin(), s.cend(), traits_impl::eq);
+        return iter == this->cend() ? npos : constexpr_distance(this->cbegin(), iter);
 	}
-	STX_CONSTEXPR14 size_type find(charT c, size_type pos = 0) const noexcept
+    STX_CONSTEXPR14 size_type find(charT c, size_type pos = 0) const noexcept
 	{
 		return find(basic_string_view(&c, 1), pos);
 	}
@@ -380,7 +481,7 @@ public:
 			return pos;
 		for(const charT* cur = ptr_ + pos;; --cur)
 		{
-			if(traits::compare(cur, s.ptr_, s.len_) == 0)
+			if(traits_impl::compare(cur, s.ptr_, s.len_) == 0)
 				return cur - ptr_;
 			if(cur == ptr_)
 				return npos;
@@ -405,7 +506,7 @@ public:
 		if(pos >= len_ || s.len_ == 0)
 			return npos;
 		const_iterator iter =
-			std::find_first_of(this->cbegin() + pos, this->cend(), s.cbegin(), s.cend(), traits::eq);
+			std::find_first_of(this->cbegin() + pos, this->cend(), s.cbegin(), s.cend(), traits_impl::eq);
 		return iter == this->cend() ? npos : std::distance(this->cbegin(), iter);
 	}
 	STX_CONSTEXPR14 size_type find_first_of(charT c, size_type pos = 0) const noexcept
@@ -431,7 +532,7 @@ public:
 		else
 			pos = len_ - (pos + 1);
 		const_reverse_iterator iter =
-			std::find_first_of(this->crbegin() + pos, this->crend(), s.cbegin(), s.cend(), traits::eq);
+			std::find_first_of(this->crbegin() + pos, this->crend(), s.cbegin(), s.cend(), traits_impl::eq);
 		return iter == this->crend() ? npos : reverse_distance(this->crbegin(), iter);
 	}
 	STX_CONSTEXPR14 size_type find_last_of(charT c, size_type pos = npos) const noexcept
@@ -507,7 +608,7 @@ private:
 	Iterator find_not_of(Iterator first, Iterator last, basic_string_view s) const noexcept
 	{
 		for(; first != last; ++first)
-			if(0 == traits::find(s.ptr_, s.len_, *first))
+			if(0 == traits_impl::find(s.ptr_, s.len_, *first))
 				return first;
 		return last;
 	}
@@ -855,6 +956,30 @@ using u16string_view = basic_string_view<char16_t, std::char_traits<char16_t>>;
 using u32string_view = basic_string_view<char32_t, std::char_traits<char32_t>>;
 using wstring_view = basic_string_view<wchar_t, std::char_traits<wchar_t>>;
 
+// I added these EMSR.
+inline namespace literals
+{
+inline namespace string_view_literals
+{
+
+inline constexpr basic_string_view<char>
+operator""_sv(const char* __str, size_t __len)
+{ return basic_string_view<char>{__str, __len}; }
+
+inline constexpr basic_string_view<wchar_t>
+operator""_sv(const wchar_t* __str, size_t __len)
+{ return basic_string_view<wchar_t>{__str, __len}; }
+
+inline constexpr basic_string_view<char16_t>
+operator""_sv(const char16_t* __str, size_t __len)
+{ return basic_string_view<char16_t>{__str, __len}; }
+
+inline constexpr basic_string_view<char32_t>
+operator""_sv(const char32_t* __str, size_t __len)
+{ return basic_string_view<char32_t>{__str, __len}; }
+
+} // namespace string_literals
+} // namespace literals
 } // end namespace
 
 #if 0
@@ -866,6 +991,8 @@ namespace std {
     template<> struct hash<STX_NAMESPACE_NAME::wstring_view>;
 }
 #endif
+
+
 
 #endif // STX_HAVE_STD_STRING_VIEW
 

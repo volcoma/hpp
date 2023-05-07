@@ -5,11 +5,15 @@
 #define STX_NAMESPACE_NAME hpp
 #endif
 
+//#include <version>
+//#if defined(__cpp_lib_variant) && !defined(STX_NO_STD_VARIANT)
 #if defined(__has_include) && !defined(STX_NO_STD_VARIANT)
 #if __has_include(<variant>) && (__cplusplus > 201402)
+#include <variant>
 namespace STX_NAMESPACE_NAME
 {
 using std::bad_variant_access;
+using std::get;
 using std::get_if;
 using std::holds_alternative;
 using std::monostate;
@@ -32,7 +36,7 @@ using std::in_place_type_t;
 #define STX_HAVE_STD_VARIANT 1
 #endif // __hasinclude(any)
 #endif // defined(__hasinclude)
-
+//#endif // defined(__cpp_lib_variant)
 #ifndef STX_HAVE_STD_VARIANT
 
 #ifndef MPARK_VARIANT_HPP
@@ -1002,10 +1006,10 @@ inline constexpr Trait trait()
 
 #ifdef MPARK_CPP14_CONSTEXPR
 template <typename... Traits>
-inline constexpr Trait common_trait(Traits... traits)
+inline constexpr Trait common_trait(Traits... tr)
 {
 	Trait result = Trait::TriviallyAvailable;
-	for(Trait t : {traits...})
+    for(Trait t : {tr...})
 	{
 		if(static_cast<int>(t) > static_cast<int>(result))
 		{
