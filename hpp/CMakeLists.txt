@@ -11,7 +11,7 @@ if (NOT TARGET ${target_for_ide})
     add_custom_target(${target_for_ide} SOURCES ${SOURCES})
 endif()
 
-set_target_properties(${target_name} PROPERTIES
+set_target_properties(${target_name}_ide PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
