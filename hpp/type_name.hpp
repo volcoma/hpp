@@ -52,7 +52,7 @@ constexpr std::size_t wrapped_type_name_suffix_length()
 } // namespace detail
 
 template<typename T>
-constexpr hpp::string_view type_name()
+constexpr hpp::string_view type_name_full()
 {
     constexpr auto wrapped_name = detail::wrapped_type_name<T>();
     constexpr auto prefix_length = detail::wrapped_type_name_prefix_length();
@@ -65,6 +65,24 @@ constexpr hpp::string_view type_name()
     constexpr auto declaration_prefix_length =
         declaration_prefix_result == hpp::string_view::npos ? 0 : declaration_prefix_result + 1;
     return result.substr(declaration_prefix_length);
+}
+
+template<typename T>
+constexpr hpp::string_view type_name()
+{
+    auto name = type_name_full<T>();
+    auto i = name.find_last_of("::");
+    if(i != hpp::string_view::npos)
+    {
+        return name.substr(i + 1);
+    }
+    return name;
+}
+
+template<typename T>
+std::string type_name_full_str()
+{
+    return std::string(type_name_full<T>());
 }
 
 template<typename T>
