@@ -72,7 +72,7 @@ constexpr hpp::string_view type_name()
 {
     constexpr auto name = type_name_full<T>();
 
-    constexpr auto separator_result = name.find("::");
+    constexpr auto separator_result = name.find_last_of("::");
     constexpr auto separator_pos =
         separator_result == hpp::string_view::npos ? 0 : separator_result + 2;
 
