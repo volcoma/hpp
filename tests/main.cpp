@@ -3,9 +3,19 @@
 #include <hpp/type_name.hpp>
 #include <iostream>
 
+namespace test
+{
+struct my_struct
+{
+
+};
+}
+
 int main()
 {
     static_assert(hpp::type_name<int>() == hpp::string_view("int"), "not working");
+    static_assert(hpp::type_name<test::my_struct>() == hpp::string_view("my_struct"), "not working");
+    static_assert(hpp::type_name_full<test::my_struct>() == hpp::string_view("test::my_struct"), "not working");
 
 	constexpr int i = 0;
 	if_constexpr(i == 0)

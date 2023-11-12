@@ -70,13 +70,13 @@ constexpr hpp::string_view type_name_full()
 template<typename T>
 constexpr hpp::string_view type_name()
 {
-    auto name = type_name_full<T>();
-    auto i = name.find_last_of("::");
-    if(i != hpp::string_view::npos)
-    {
-        return name.substr(i + 1);
-    }
-    return name;
+    constexpr auto name = type_name_full<T>();
+
+    constexpr auto separator_result = name.find("::");
+    constexpr auto separator_pos =
+        separator_result == hpp::string_view::npos ? 0 : separator_result + 2;
+
+    return name.substr(separator_pos);
 }
 
 template<typename T>
