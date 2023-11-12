@@ -138,10 +138,10 @@ public:
 	typedef const_reverse_iterator reverse_iterator;
 	typedef std::size_t size_type;
 	typedef std::ptrdiff_t difference_type;
-	static constexpr size_type npos = size_type(-1);
+	static STX_CONSTEXPR14 size_type npos = size_type(-1);
 
 	// construct/copy
-	constexpr basic_string_view() noexcept
+	STX_CONSTEXPR14 basic_string_view() noexcept
 		: ptr_(nullptr)
 		, len_(0)
 	{
@@ -149,7 +149,7 @@ public:
 
 	// by defaulting these functions, basic_string_ref becomes
 	//  trivially copy/move constructible.
-	constexpr basic_string_view(const basic_string_view& rhs) noexcept = default;
+	STX_CONSTEXPR14 basic_string_view(const basic_string_view& rhs) noexcept = default;
 #if 0
     : ptr_(rhs.ptr_), len_(rhs.len_) {}
 #endif
@@ -170,77 +170,77 @@ public:
 	{
 	}
 
-	constexpr basic_string_view(const charT* str)
+	STX_CONSTEXPR14 basic_string_view(const charT* str)
 		: ptr_(str)
 		, len_(traits_impl::length(str))
 	{
 	}
 
-	constexpr basic_string_view(const charT* str, size_type len)
+	STX_CONSTEXPR14 basic_string_view(const charT* str, size_type len)
 		: ptr_(str)
 		, len_(len)
 	{
 	}
 
 	// iterators
-	constexpr const_iterator begin() const noexcept
+	STX_CONSTEXPR14 const_iterator begin() const noexcept
 	{
 		return ptr_;
 	}
-	constexpr const_iterator cbegin() const noexcept
+	STX_CONSTEXPR14 const_iterator cbegin() const noexcept
 	{
 		return ptr_;
 	}
-	constexpr const_iterator end() const noexcept
+	STX_CONSTEXPR14 const_iterator end() const noexcept
 	{
 		return ptr_ + len_;
 	}
-	constexpr const_iterator cend() const noexcept
+	STX_CONSTEXPR14 const_iterator cend() const noexcept
 	{
 		return ptr_ + len_;
 	}
-	const_reverse_iterator rbegin() const noexcept
+	STX_CONSTEXPR14 const_reverse_iterator rbegin() const noexcept
 	{
 		return const_reverse_iterator(end());
 	}
-	const_reverse_iterator crbegin() const noexcept
+	STX_CONSTEXPR14 const_reverse_iterator crbegin() const noexcept
 	{
 		return const_reverse_iterator(end());
 	}
-	const_reverse_iterator rend() const noexcept
+	STX_CONSTEXPR14 const_reverse_iterator rend() const noexcept
 	{
 		return const_reverse_iterator(begin());
 	}
-	const_reverse_iterator crend() const noexcept
+	STX_CONSTEXPR14 const_reverse_iterator crend() const noexcept
 	{
 		return const_reverse_iterator(begin());
 	}
 
 	// capacity
-	constexpr size_type size() const noexcept
+	STX_CONSTEXPR14 size_type size() const noexcept
 	{
 		return len_;
 	}
-	constexpr size_type length() const noexcept
+	STX_CONSTEXPR14 size_type length() const noexcept
 	{
 		return len_;
 	}
-	constexpr size_type max_size() const noexcept
+	STX_CONSTEXPR14 size_type max_size() const noexcept
 	{
 		return len_;
 	}
-	constexpr bool empty() const noexcept
+	STX_CONSTEXPR14 bool empty() const noexcept
 	{
 		return len_ == 0;
 	}
 
 	// element access
-	constexpr const_reference operator[](size_type pos) const noexcept
+	STX_CONSTEXPR14 const_reference operator[](size_type pos) const noexcept
 	{
 		return ptr_[pos];
 	}
 
-	constexpr const_reference at(size_t pos) const
+	STX_CONSTEXPR14 const_reference at(size_t pos) const
 	{
         return pos >= len_ ? throw std::out_of_range("hpp::string_view::at") : ptr_[pos];
 		//             if ( pos >= len_ )
@@ -248,15 +248,15 @@ public:
 		//             return ptr_[pos];
 	}
 
-	constexpr const_reference front() const
+	STX_CONSTEXPR14 const_reference front() const
 	{
 		return ptr_[0];
 	}
-	constexpr const_reference back() const
+	STX_CONSTEXPR14 const_reference back() const
 	{
 		return ptr_[len_ - 1];
 	}
-	constexpr const_pointer data() const noexcept
+	STX_CONSTEXPR14 const_pointer data() const noexcept
 	{
 		return ptr_;
 	}
@@ -369,29 +369,29 @@ public:
 	}
 
 	//  Searches
-	constexpr bool starts_with(charT c) const noexcept
+	STX_CONSTEXPR14 bool starts_with(charT c) const noexcept
 	{ // Boost extension
 		return !empty() && traits_impl::eq(c, front());
 	}
 
-	constexpr bool starts_with(basic_string_view x) const noexcept
+	STX_CONSTEXPR14 bool starts_with(basic_string_view x) const noexcept
 	{ // Boost extension
 		return len_ >= x.len_ && traits_impl::compare(ptr_, x.ptr_, x.len_) == 0;
 	}
 
-	constexpr bool ends_with(charT c) const noexcept
+	STX_CONSTEXPR14 bool ends_with(charT c) const noexcept
 	{ // Boost extension
 		return !empty() && traits_impl::eq(c, back());
 	}
 
-	constexpr bool ends_with(basic_string_view x) const noexcept
+	STX_CONSTEXPR14 bool ends_with(basic_string_view x) const noexcept
 	{ // Boost extension
 		return len_ >= x.len_ && traits_impl::compare(ptr_ + len_ - x.len_, x.ptr_, x.len_) == 0;
 	}
 
 
     template<class It>
-    constexpr // required since C++17
+    STX_CONSTEXPR14 // required since C++17
         typename std::iterator_traits<It>::difference_type
     constexpr_do_distance(It first, It last, std::input_iterator_tag)
     {
@@ -405,7 +405,7 @@ public:
 
     template<class It>
     static
-    constexpr // required since C++17
+    STX_CONSTEXPR14 // required since C++17
         typename std::iterator_traits<It>::difference_type
     constexpr_do_distance(It first, It last, std::random_access_iterator_tag)
     {
@@ -416,7 +416,7 @@ public:
 
     template<class It>
     static
-    constexpr // since C++17
+    STX_CONSTEXPR14 // since C++17
         typename std::iterator_traits<It>::difference_type
         constexpr_distance(It first, It last)
     {
@@ -425,7 +425,7 @@ public:
     }
     template<class ForwardIt1, class ForwardIt2, class BinaryPredicate>
     static
-    constexpr // since C++17
+    STX_CONSTEXPR14 // since C++17
         ForwardIt1 constexpr_search(ForwardIt1 first, ForwardIt1 last,
                                 ForwardIt2 s_first, ForwardIt2 s_last,
                             BinaryPredicate p)
@@ -444,6 +444,18 @@ public:
                 }
             }
         }
+    }
+
+    template<class InputIt, class ForwardIt, class BinaryPredicate>
+    static STX_CONSTEXPR14 InputIt constexpr_find_first_of(InputIt first, InputIt last,
+                          ForwardIt s_first, ForwardIt s_last,
+                          BinaryPredicate p)
+    {
+        for (; first != last; ++first)
+            for (ForwardIt it = s_first; it != s_last; ++it)
+                if (p(*first, *it))
+                    return first;
+        return last;
     }
 
 	//  find
@@ -506,7 +518,7 @@ public:
 		if(pos >= len_ || s.len_ == 0)
 			return npos;
 		const_iterator iter =
-			std::find_first_of(this->cbegin() + pos, this->cend(), s.cbegin(), s.cend(), traits_impl::eq);
+			constexpr_find_first_of(this->cbegin() + pos, this->cend(), s.cbegin(), s.cend(), traits_impl::eq);
 		return iter == this->cend() ? npos : std::distance(this->cbegin(), iter);
 	}
 	STX_CONSTEXPR14 size_type find_first_of(charT c, size_type pos = 0) const noexcept
@@ -532,7 +544,7 @@ public:
 		else
 			pos = len_ - (pos + 1);
 		const_reverse_iterator iter =
-			std::find_first_of(this->crbegin() + pos, this->crend(), s.cbegin(), s.cend(), traits_impl::eq);
+			constexpr_find_first_of(this->crbegin() + pos, this->crend(), s.cbegin(), s.cend(), traits_impl::eq);
 		return iter == this->crend() ? npos : reverse_distance(this->crbegin(), iter);
 	}
 	STX_CONSTEXPR14 size_type find_last_of(charT c, size_type pos = npos) const noexcept
@@ -597,15 +609,15 @@ public:
 
 private:
 	template <typename r_iter>
-	size_type reverse_distance(r_iter first, r_iter last) const noexcept
+	STX_CONSTEXPR14 size_type reverse_distance(r_iter first, r_iter last) const noexcept
 	{
 		// Portability note here: std::distance is not NOEXCEPT, but calling it with a
 		// string_view::reverse_iterator will not throw.
-		return len_ - 1 - std::distance(first, last);
+		return len_ - 1 - constexpr_distance(first, last);
 	}
 
 	template <typename Iterator>
-	Iterator find_not_of(Iterator first, Iterator last, basic_string_view s) const noexcept
+	STX_CONSTEXPR14 Iterator find_not_of(Iterator first, Iterator last, basic_string_view s) const noexcept
 	{
 		for(; first != last; ++first)
 			if(0 == traits_impl::find(s.ptr_, s.len_, *first))
@@ -962,19 +974,19 @@ inline namespace literals
 inline namespace string_view_literals
 {
 
-inline constexpr basic_string_view<char>
+inline STX_CONSTEXPR14 basic_string_view<char>
 operator""_sv(const char* __str, size_t __len)
 { return basic_string_view<char>{__str, __len}; }
 
-inline constexpr basic_string_view<wchar_t>
+inline STX_CONSTEXPR14 basic_string_view<wchar_t>
 operator""_sv(const wchar_t* __str, size_t __len)
 { return basic_string_view<wchar_t>{__str, __len}; }
 
-inline constexpr basic_string_view<char16_t>
+inline STX_CONSTEXPR14 basic_string_view<char16_t>
 operator""_sv(const char16_t* __str, size_t __len)
 { return basic_string_view<char16_t>{__str, __len}; }
 
-inline constexpr basic_string_view<char32_t>
+inline STX_CONSTEXPR14 basic_string_view<char32_t>
 operator""_sv(const char32_t* __str, size_t __len)
 { return basic_string_view<char32_t>{__str, __len}; }
 
