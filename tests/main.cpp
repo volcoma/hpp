@@ -22,12 +22,9 @@ struct my_struct2
 
 int main()
 {
-    static_assert(hpp::type_name<int>() == hpp::string_view("int"), "not working");
-    static_assert(hpp::type_name<test::my_struct>() == hpp::string_view("my_struct"), "not working");
-    static_assert(hpp::type_name_full<test::my_struct>() == hpp::string_view("test::my_struct"), "not working");
-//    static_assert(hpp::type_name_full<test2::my_struct2<test::my_struct>>() == hpp::string_view("test2::my_struct2< test::my_struct >"), "not working");
+    static_assert(hpp::type_name<int>() == "int", "not working");
+    static_assert(hpp::type_name<test::my_struct>() == "test::my_struct", "not working");
 
-    std::cout << hpp::type_name_full<test2::my_struct2<test::my_struct>>() << std::endl;
 	constexpr int i = 0;
 	if_constexpr(i == 0)
 	{

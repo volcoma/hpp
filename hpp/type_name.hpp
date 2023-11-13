@@ -71,13 +71,6 @@ template<typename T>
 constexpr hpp::string_view type_name()
 {
     return type_name_full<T>();
-//    constexpr auto name = type_name_full<T>();
-
-//    constexpr auto separator_result = name.rfind("::");
-//    constexpr auto separator_pos =
-//        separator_result == hpp::string_view::npos ? 0 : separator_result + 2;
-
-//    return name.substr(separator_pos);
 }
 
 template<typename T>
