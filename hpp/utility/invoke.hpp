@@ -123,36 +123,43 @@ std::function<Ret(Ts...)> bind(C* const c, Ret (C::*m)(Ts...) const)
     return [=](auto&&... args) { return (c->*m)(std::forward<decltype(args)>(args)...); };
 }
 
-
 // Conforming C++14 implementation (is also a valid C++11 implementation):
 namespace detail
 {
-template <typename AlwaysVoid, typename, typename...>
-struct invoke_result
+///////////////////////////////////////////////////////////////////////////
+
+template <typename T, typename Enable = void>
+struct invoke_result_impl
 {
 };
-template <typename F, typename... Args>
-struct invoke_result<decltype(void(invoke(std::declval<F>(), std::declval<Args>()...))), F, Args...>
+
+template <typename F, typename... Ts>
+struct invoke_result_impl<F(Ts...), decltype((void)invoke(std::declval<F>(), std::declval<Ts>()...))>
 {
-	using type = decltype(invoke(std::declval<F>(), std::declval<Args>()...));
+	using type = decltype(invoke(std::declval<F>(), std::declval<Ts>()...));
 };
 } // namespace detail
 
-template <class>
-struct result_of;
-template <class F, class... ArgTypes>
-struct result_of<F(ArgTypes...)> : detail::invoke_result<void, F, ArgTypes...>
+//! template <class Fn, class... ArgTypes> struct invoke_result;
+//!
+//! - _Comments_: If the expression `INVOKE(std::declval<Fn>(),
+//!   std::declval<ArgTypes>()...)` is well-formed when treated as an
+//!   unevaluated operand, the member typedef `type` names the type
+//!   `decltype(INVOKE(std::declval<Fn>(), std::declval<ArgTypes>()...))`;
+//!   otherwise, there shall be no member `type`. Access checking is
+//!   performed as if in a context unrelated to `Fn` and `ArgTypes`. Only
+//!   the validity of the immediate context of the expression is considered.
+//!
+//! - _Preconditions_: `Fn` and all types in the template parameter pack
+//!   `ArgTypes` are complete types, _cv_ `void`, or arrays of unknown
+//!   bound.
+template <typename Fn, typename... ArgTypes>
+struct invoke_result : detail::invoke_result_impl<Fn && (ArgTypes && ...)>
 {
 };
 
-template <typename F, typename... Args>
-using result_of_t = typename result_of<F(Args...)>::type;
-
-template <class F, class... ArgTypes>
-struct invoke_result : detail::invoke_result<void, F, ArgTypes...>
-{
-};
-
-template <typename F, typename... Args>
-using invoke_result_t = typename invoke_result<F, Args...>::type;
+//! template <class Fn, class... ArgTypes>
+//! using invoke_result_t = typename invoke_result<Fn, ArgTypes...>::type;
+template <typename Fn, typename... ArgTypes>
+using invoke_result_t = typename invoke_result<Fn, ArgTypes...>::type;
 } // namespace hpp
