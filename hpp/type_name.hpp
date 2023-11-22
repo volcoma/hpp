@@ -85,4 +85,10 @@ std::string type_name_str()
     return std::string(type_name<T>());
 }
 
+template<typename T>
+std::string type_name_str(const T&)
+{
+    return type_name_str<T>();
+}
+
 } // namespace hpp
