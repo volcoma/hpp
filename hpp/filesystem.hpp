@@ -89,7 +89,7 @@ inline path executable_path(const char* argv0)
 }
 inline void show_in_graphical_env(const path& _path)
 {
-    ShellExecuteA(nullptr, nullptr, _path.string().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteA(nullptr, "open", _path.string().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 inline path persistent_path()
