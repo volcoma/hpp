@@ -71,6 +71,7 @@ inline path executable_path_fallback(const char* argv0)
 #if defined(_WIN32)
 #include <Windows.h>
 #include <shlobj.h>
+//#include <Shlwapi.h>
 
 #undef min
 #undef max
@@ -87,9 +88,27 @@ inline path executable_path(const char* argv0)
     }
     return path(std::string(buf.data()));
 }
+
+//inline std::string get_associated_program_for_file_type(const std::string& fileType)
+//{
+//    std::string exeName;
+//    DWORD length = 0;
+
+//    // Get the executable name
+//    length = 0;
+//    AssocQueryStringA(ASSOCF_NONE, ASSOCSTR_EXECUTABLE, fileType.c_str(), NULL, NULL, &length);
+//    if (length > 0)
+//    {
+//        exeName.resize(length);
+//        AssocQueryStringA(ASSOCF_NONE, ASSOCSTR_EXECUTABLE, fileType.c_str(), NULL, exeName.data(), &length);
+//    }
+
+//    return exeName;
+//}
+
 inline void show_in_graphical_env(const path& _path)
 {
-    ShellExecuteA(nullptr, "open", _path.string().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteA(nullptr, nullptr, _path.string().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 inline path persistent_path()
