@@ -1,9 +1,15 @@
 cmake_minimum_required(VERSION 3.14)
 
+
+set(HPP_MAIN_PROJECT ON)
+if(DEFINED PROJECT_SOURCE_DIR)
+    set(HPP_MAIN_PROJECT OFF)
+endif()
+
 project(hpp)
 include(CTest)
 
-option(BUILD_HPP_TESTS "Build the tests" ON)
+option(BUILD_HPP_TESTS "Build the tests" ${HPP_MAIN_PROJECT})
 
 if(BUILD_HPP_TESTS)
     if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
