@@ -37,6 +37,8 @@ inline file_time_type now()
 //-----------------------------------------------------------------------------
 path executable_path(const char* argv0);
 
+
+std::string executable_extension();
 //-----------------------------------------------------------------------------
 //  Name : show_in_graphical_env ()
 /// <summary>
@@ -87,6 +89,11 @@ inline path executable_path(const char* argv0)
         return executable_path_fallback(argv0);
     }
     return path(std::string(buf.data()));
+}
+
+inline std::string executable_extension()
+{
+	return ".exe";
 }
 
 //inline std::string get_associated_program_for_file_type(const std::string& fileType)
@@ -144,6 +151,10 @@ inline path executable_path(const char* argv0)
     path full_path(absolute(fs::absolute(path(std::string(buf.data()))), err));
     return full_path;
 }
+inline std::string executable_extension()
+{
+	return ".app";
+}
 inline void show_in_graphical_env(const path& _path)
 {
 }
@@ -171,6 +182,10 @@ inline path executable_path(const char* argv0)
     fs::error_code err;
     path full_path(absolute(fs::absolute(path(p)), err));
     return full_path;
+}
+inline std::string executable_extension()
+{
+	return "";
 }
 inline void show_in_graphical_env(const path& _path)
 {
@@ -207,7 +222,10 @@ inline path executable_path(const char* argv0)
 {
     return executable_path_fallback(argv0);
 }
-
+inline std::string executable_extension()
+{
+	return "";
+}
 inline void show_in_graphical_env(const path& _path)
 {
 }
