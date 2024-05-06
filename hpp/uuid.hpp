@@ -449,6 +449,11 @@ public:
 		return span<std::byte const, 16>(reinterpret_cast<std::byte const*>(data.data()), 16);
 	}
 
+	[[nodiscard]] inline std::array<value_type, 16> as_array() const
+	{
+		return data;
+	}
+
 	template <typename StringType>
 	[[nodiscard]] constexpr static bool is_valid_uuid(StringType const& in_str) noexcept
 	{
