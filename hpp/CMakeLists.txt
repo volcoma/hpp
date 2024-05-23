@@ -20,22 +20,7 @@ set_target_properties(${target_name}_ide PROPERTIES
 )
 
 target_compile_definitions(${target_name} INTERFACE
-    STX_NO_STD_FILESYSTEM
-    STX_NO_STD_VARIANT
-    STX_NO_STD_OPTIONAL
+    #STX_NO_STD_FILESYSTEM
+    #STX_NO_STD_VARIANT
+    #STX_NO_STD_OPTIONAL
     STX_NO_STD_STRING_VIEW)
-
-#if(WIN32)
-
-# Find the Shlwapi library
-#find_library(SHLWAPI_LIBRARY Shlwapi)
-
-## Check if the library was found
-#if(NOT SHLWAPI_LIBRARY)
-#  message(FATAL_ERROR "Shlwapi library not found")
-#endif()
-
-## Link the Shlwapi library to your target
-#target_link_libraries(${target_name} INTERFACE ${SHLWAPI_LIBRARY})
-
-#endif()
