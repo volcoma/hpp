@@ -44,6 +44,12 @@ struct visit_impl<0>
     }
 };
 
+template<typename Tuple, typename F, std::size_t... I>
+void for_each_tuple_type_impl(F&& f, std::index_sequence<I...>)
+{
+	(f(std::integral_constant<std::size_t, I>{}), ...);
+}
+
 } // namespace detail
 
 template <typename Tuple, typename F>
@@ -69,6 +75,13 @@ template <typename Tuple, typename F>
 void visit_at(Tuple&& tup, size_t idx, F&& f)
 {
     detail::visit_impl<std::tuple_size<std::decay_t<Tuple>>::value>::visit(tup, idx, std::forward<F>(f));
+}
+
+template<typename Tuple, typename F>
+void for_each_tuple_type(F&& f)
+{
+	constexpr auto size = std::tuple_size_v<std::decay_t<Tuple>>;
+	detail::for_each_tuple_type_impl<Tuple>(std::forward<F>(f), std::make_index_sequence<size>{});
 }
 
 } // namespace hpp
