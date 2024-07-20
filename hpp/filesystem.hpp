@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdlib>
 #include <vector>
+#include <algorithm>
 
 // #include <version>
 // #if defined(__cpp_lib_filesystem)
