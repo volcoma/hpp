@@ -80,18 +80,34 @@ inline bool is_executable(const path& path)
 	return false;
 }
 
-inline fs::path find_program(const std::string& program, const std::vector<path>& paths)
+inline fs::path find_program(const std::vector<std::string>& names, const std::vector<path>& paths)
 {
 	for(auto dir : paths)
 	{
 		dir.make_preferred();
-		path full_path = dir / program;
-		if(fs::exists(full_path) && fs::is_executable(full_path))
+		for(const auto& name : names)
 		{
-			return full_path;
+			path full_path = dir / name;
+			if(fs::exists(full_path) && fs::is_executable(full_path))
+			{
+				return full_path;
+			}
 		}
 	}
+
 	return {};
+}
+
+
+inline fs::path find_program(const std::vector<std::string>& names, const std::vector<std::string>& paths)
+{
+	std::vector<fs::path> lib_paths;
+	lib_paths.reserve(paths.size());
+	std::transform(std::begin(paths), std::end(paths), std::back_inserter(lib_paths), [](const auto& p)
+				   {
+					   return fs::path(p).make_preferred();
+				   });
+	return find_program(names, lib_paths);
 }
 
 inline std::vector<std::string> get_library_extensions()
@@ -130,6 +146,17 @@ inline fs::path find_library(const std::vector<std::string>& names, const std::v
 		}
 	}
 	return {};
+}
+
+inline fs::path find_library(const std::vector<std::string>& names, const std::vector<std::string>& paths)
+{
+	std::vector<fs::path> lib_paths;
+	lib_paths.reserve(paths.size());
+	std::transform(std::begin(paths), std::end(paths), std::back_inserter(lib_paths), [](const auto& p)
+				   {
+					   return fs::path(p).make_preferred();
+				   });
+	return find_library(names, lib_paths);
 }
 } // namespace fs
 
