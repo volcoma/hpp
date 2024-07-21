@@ -24,6 +24,9 @@ int main()
 {
     static_assert(hpp::type_name<int>() == "int", "not working");
     static_assert(hpp::type_name<test::my_struct>() == "test::my_struct", "not working");
+	static_assert(hpp::type_name_unqualified<test::my_struct>() == "my_struct", "not working");
+	static_assert(hpp::type_name_unqualified<test2::my_struct2<test::my_struct>>() == "my_struct2", "not working");
+
 
 	constexpr int i = 0;
 	if_constexpr(i == 0)

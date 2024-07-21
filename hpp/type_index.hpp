@@ -47,7 +47,7 @@ template<typename T>
 auto type_index::construct() -> construct_t
 {
     construct_t result;
-    result.name = hpp::type_name<T>();
+	result.name = hpp::type_name<T>();
     result.hash_code = crc64(result.name.data(), result.name.size());
     return result;
 }
