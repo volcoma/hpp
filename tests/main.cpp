@@ -1,6 +1,8 @@
 #include <hpp/type_traits.hpp>
 #include <hpp/utility.hpp>
 #include <hpp/type_name.hpp>
+#include <hpp/type_index.hpp>
+
 #include <iostream>
 
 namespace test
@@ -26,6 +28,7 @@ int main()
     static_assert(hpp::type_name<test::my_struct>() == "test::my_struct", "not working");
 	static_assert(hpp::type_name_unqualified<test::my_struct>() == "my_struct", "not working");
 	static_assert(hpp::type_name_unqualified<test2::my_struct2<test::my_struct>>() == "my_struct2", "not working");
+	static_assert(hpp::type_id_constexpr<test::my_struct>().name() == "test::my_struct", "not working");
 
 
 	constexpr int i = 0;
