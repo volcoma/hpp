@@ -177,7 +177,7 @@ public:
 		process_byte(static_cast<unsigned char>((bitCount >> 24) & 0xFF));
 		process_byte(static_cast<unsigned char>((bitCount >> 16) & 0xFF));
 		process_byte(static_cast<unsigned char>((bitCount >> 8) & 0xFF));
-		process_byte(static_cast<unsigned char>((bitCount)&0xFF));
+		process_byte(static_cast<unsigned char>((bitCount) & 0xFF));
 
 		memcpy(digest, m_digest, 5 * sizeof(uint32_t));
 		return digest;
@@ -313,11 +313,11 @@ inline constexpr wchar_t guid_encoder_upper<wchar_t>[17] = L"0123456789ABCDEF";
 // --------------------------------------------------------------------------------------------------------------------------
 // time_low	                  unsigned long	   0 - 3	   The low field of the timestamp.
 // time_mid	                  unsigned short	   4 - 5	   The middle field of the timestamp.
-// time_hi_and_version	      unsigned short	   6 - 7	   The high field of the timestamp multiplexed with the
-// version number.
-// clock_seq_hi_and_reserved	unsigned small	   8	      The high field of the clock sequence multiplexed with
-// the variant. clock_seq_low	            unsigned small	   9	      The low field of the clock sequence.
-// node	                     character	      10 - 15	The spatially unique node identifier.
+// time_hi_and_version	      unsigned short	   6 - 7	   The high field of the timestamp multiplexed
+// with the version number. clock_seq_hi_and_reserved	unsigned small	   8	      The high field of the
+// clock sequence multiplexed with the variant. clock_seq_low	            unsigned small	   9	      The
+// low field of the clock sequence. node	                     character	      10 - 15	The spatially
+// unique node identifier.
 // --------------------------------------------------------------------------------------------------------------------------
 // 0                   1                   2                   3
 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -374,12 +374,12 @@ enum class uuid_version
 
 // Forward declare uuid & to_string so that we can declare to_string as a friend later.
 class uuid;
+
 template <class CharT = char, class Traits = std::char_traits<CharT>, class Allocator = std::allocator<CharT>>
 std::basic_string<CharT, Traits, Allocator> to_string(uuid const& id);
 
 template <class CharT = char, class Traits = std::char_traits<CharT>, class Allocator = std::allocator<CharT>>
 std::basic_string<CharT, Traits, Allocator> to_string_upper(uuid const& id);
-
 
 // --------------------------------------------------------------------------------------------------------------------------
 // uuid class
@@ -558,6 +558,96 @@ public:
 		return uuid{data};
 	}
 
+	template <class CharT, class Traits, class Allocator, size_t N>
+	[[nodiscard]] inline std::basic_string<CharT, Traits, Allocator>
+	to_string_impl(const CharT (&encoder)[N]) const
+	{
+		std::basic_string<CharT, Traits, Allocator> uustr{detail::empty_guid<CharT>};
+
+		// Helper functions for swapping endianness
+		auto const swap_endian = [](uint32_t val) -> uint32_t
+		{
+			return ((val & 0xFF000000) >> 24) | ((val & 0x00FF0000) >> 8) | ((val & 0x0000FF00) << 8) |
+				   ((val & 0x000000FF) << 24);
+		};
+
+		auto const swap_endian_short = [](uint16_t val) -> uint16_t { return (val >> 8) | (val << 8); };
+
+		// Detect if byte swapping is needed based on UUID variant
+		bool needs_swap = (variant() == uuid_variant::microsoft);
+
+		// // Extract fields with conditional swapping
+		// uint32_t time_low = needs_swap ? swap_endian(*reinterpret_cast<const uint32_t*>(&data[0]))
+		// 							   : *reinterpret_cast<const uint32_t*>(&data[0]);
+
+		// uint16_t time_mid = needs_swap ? swap_endian_short(*reinterpret_cast<const uint16_t*>(&data[4]))
+		// 							   : *reinterpret_cast<const uint16_t*>(&data[4]);
+
+		// uint16_t time_hi_and_version = needs_swap
+		// 								   ? swap_endian_short(*reinterpret_cast<const
+		// uint16_t*>(&data[6])) 								   : *reinterpret_cast<const uint16_t*>(&data[6]);
+
+		uint32_t time_low;
+		std::memcpy(&time_low, &data[0], sizeof(time_low));
+		if(needs_swap)
+			time_low = swap_endian(time_low);
+
+		uint16_t time_mid;
+		std::memcpy(&time_mid, &data[4], sizeof(time_mid));
+		if(needs_swap)
+			time_mid = swap_endian_short(time_mid);
+
+		uint16_t time_hi_and_version;
+		std::memcpy(&time_hi_and_version, &data[6], sizeof(time_hi_and_version));
+		if(needs_swap)
+			time_hi_and_version = swap_endian_short(time_hi_and_version);
+
+		// Fill the UUID string
+		size_t index = 0;
+
+		// Encode `time_low` (4 bytes)
+		for(int i = 7; i >= 0; --i)
+		{
+			uustr[index++] = encoder[(time_low >> (i * 4)) & 0x0F];
+		}
+		uustr[8] = '-';
+
+		// Encode `time_mid` (2 bytes)
+		index = 9; // Move past the first dash
+		for(int i = 3; i >= 0; --i)
+		{
+			uustr[index++] = encoder[(time_mid >> (i * 4)) & 0x0F];
+		}
+		uustr[13] = '-';
+
+		// Encode `time_hi_and_version` (2 bytes)
+		index = 14; // Move past the second dash
+		for(int i = 3; i >= 0; --i)
+		{
+			uustr[index++] = encoder[(time_hi_and_version >> (i * 4)) & 0x0F];
+		}
+		uustr[18] = '-';
+
+		// Encode `clock_seq_hi_and_reserved` and `clock_seq_low` (2 bytes)
+		index = 19; // Move past the third dash
+		for(int i = 0; i < 2; ++i)
+		{
+			uustr[index++] = encoder[(data[8 + i] >> 4) & 0x0F];
+			uustr[index++] = encoder[data[8 + i] & 0x0F];
+		}
+		uustr[23] = '-';
+
+		// Encode `node` (6 bytes)
+		index = 24; // Move past the fourth dash
+		for(int i = 10; i < 16; ++i)
+		{
+			uustr[index++] = encoder[(data[i] >> 4) & 0x0F];
+			uustr[index++] = encoder[data[i] & 0x0F];
+		}
+
+		return uustr;
+	}
+
 private:
 	std::array<value_type, 16> data{{0}};
 
@@ -598,39 +688,13 @@ private:
 template <class CharT, class Traits, class Allocator>
 [[nodiscard]] inline std::basic_string<CharT, Traits, Allocator> to_string(uuid const& id)
 {
-	std::basic_string<CharT, Traits, Allocator> uustr{detail::empty_guid<CharT>};
-
-	for(size_t i = 0, index = 0; i < 36; ++i)
-	{
-		if(i == 8 || i == 13 || i == 18 || i == 23)
-		{
-			continue;
-		}
-		uustr[i] = detail::guid_encoder<CharT>[id.data[index] >> 4 & 0x0f];
-		uustr[++i] = detail::guid_encoder<CharT>[id.data[index] & 0x0f];
-		index++;
-	}
-
-	return uustr;
+	return id.to_string_impl<CharT, Traits, Allocator, 17>(detail::guid_encoder<CharT>);
 }
 
 template <class CharT, class Traits, class Allocator>
 [[nodiscard]] inline std::basic_string<CharT, Traits, Allocator> to_string_upper(uuid const& id)
 {
-	std::basic_string<CharT, Traits, Allocator> uustr{detail::empty_guid<CharT>};
-
-	for(size_t i = 0, index = 0; i < 36; ++i)
-	{
-		if(i == 8 || i == 13 || i == 18 || i == 23)
-		{
-			continue;
-		}
-		uustr[i] = detail::guid_encoder_upper<CharT>[id.data[index] >> 4 & 0x0f];
-		uustr[++i] = detail::guid_encoder_upper<CharT>[id.data[index] & 0x0f];
-		index++;
-	}
-
-	return uustr;
+	return id.to_string_impl<CharT, Traits, Allocator, 17>(detail::guid_encoder_upper<CharT>);
 }
 
 template <class Elem, class Traits>
