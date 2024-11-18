@@ -372,15 +372,6 @@ enum class uuid_version
 	name_based_sha1 = 5		 // The name-based version specified in RFS 4122 with SHA1 hashing
 };
 
-// Forward declare uuid & to_string so that we can declare to_string as a friend later.
-class uuid;
-
-template <class CharT = char, class Traits = std::char_traits<CharT>, class Allocator = std::allocator<CharT>>
-std::basic_string<CharT, Traits, Allocator> to_string(uuid const& id);
-
-template <class CharT = char, class Traits = std::char_traits<CharT>, class Allocator = std::allocator<CharT>>
-std::basic_string<CharT, Traits, Allocator> to_string_upper(uuid const& id);
-
 // --------------------------------------------------------------------------------------------------------------------------
 // uuid class
 // --------------------------------------------------------------------------------------------------------------------------
@@ -513,55 +504,82 @@ public:
 	[[nodiscard]] constexpr static optional<uuid> from_string(StringType const& in_str) noexcept
 	{
 		auto str = detail::to_string_view(in_str);
+		std::array<uint8_t, 16> raw_data{{0}};
 		bool firstDigit = true;
-		size_t hasBraces = 0;
 		size_t index = 0;
 
-		std::array<uint8_t, 16> data{{0}};
-
-		if(str.empty())
-			return {};
-
-		if(str.front() == '{')
-			hasBraces = 1;
-		if(hasBraces && str.back() != '}')
-			return {};
-
-		for(size_t i = hasBraces; i < str.size() - hasBraces; ++i)
+		// Parse the string into raw_data
+		for(size_t i = 0; i < str.size(); ++i)
 		{
-			if(str[i] == '-')
+			if(str[i] == '-' || str[i] == '{' || str[i] == '}')
 				continue;
 
 			if(index >= 16 || !detail::is_hex(str[i]))
-			{
 				return {};
-			}
 
 			if(firstDigit)
 			{
-				data[index] = static_cast<uint8_t>(detail::hex2char(str[i]) << 4);
+				raw_data[index] = static_cast<uint8_t>(detail::hex2char(str[i]) << 4);
 				firstDigit = false;
 			}
 			else
 			{
-				data[index] = static_cast<uint8_t>(data[index] | detail::hex2char(str[i]));
-				index++;
+				raw_data[index] |= static_cast<uint8_t>(detail::hex2char(str[i]));
+				++index;
 				firstDigit = true;
 			}
 		}
 
-		if(index < 16)
-		{
+		if(index != 16)
 			return {};
-		}
 
-		return uuid{data};
+		// Adjust endianness for RFC 4122 UUIDs (swap first 3 fields back to little-endian)
+		auto swap_endian = [](uint32_t val) -> uint32_t
+		{
+			return ((val & 0xFF000000) >> 24) | ((val & 0x00FF0000) >> 8) | ((val & 0x0000FF00) << 8) |
+				   ((val & 0x000000FF) << 24);
+		};
+
+		auto swap_endian_short = [](uint16_t val) -> uint16_t { return (val >> 8) | (val << 8); };
+
+		uint32_t time_low;
+		std::memcpy(&time_low, &raw_data[0], sizeof(time_low));
+		time_low = swap_endian(time_low);
+		std::memcpy(&raw_data[0], &time_low, sizeof(time_low));
+
+		uint16_t time_mid;
+		std::memcpy(&time_mid, &raw_data[4], sizeof(time_mid));
+		time_mid = swap_endian_short(time_mid);
+		std::memcpy(&raw_data[4], &time_mid, sizeof(time_mid));
+
+		uint16_t time_hi_and_version;
+		std::memcpy(&time_hi_and_version, &raw_data[6], sizeof(time_hi_and_version));
+		time_hi_and_version = swap_endian_short(time_hi_and_version);
+		std::memcpy(&raw_data[6], &time_hi_and_version, sizeof(time_hi_and_version));
+
+		return uuid(raw_data);
 	}
 
+	template <class CharT = char, class Traits = std::char_traits<CharT>,
+			  class Allocator = std::allocator<CharT>>
+	[[nodiscard]] inline std::basic_string<CharT, Traits, Allocator> to_string() const
+	{
+		return to_string_impl<CharT, Traits, Allocator, 17>(detail::guid_encoder<CharT>);
+	}
+
+	template <class CharT = char, class Traits = std::char_traits<CharT>,
+			  class Allocator = std::allocator<CharT>>
+	[[nodiscard]] inline std::basic_string<CharT, Traits, Allocator> to_string_upper() const
+	{
+		return to_string_impl<CharT, Traits, Allocator, 17>(detail::guid_encoder_upper<CharT>);
+	}
+
+private:
 	template <class CharT, class Traits, class Allocator, size_t N>
 	[[nodiscard]] inline std::basic_string<CharT, Traits, Allocator>
 	to_string_impl(const CharT (&encoder)[N]) const
 	{
+
 		std::basic_string<CharT, Traits, Allocator> uustr{detail::empty_guid<CharT>};
 
 		// Helper functions for swapping endianness
@@ -575,17 +593,6 @@ public:
 
 		// Detect if byte swapping is needed based on UUID variant
 		bool needs_swap = (variant() == uuid_variant::microsoft);
-
-		// // Extract fields with conditional swapping
-		// uint32_t time_low = needs_swap ? swap_endian(*reinterpret_cast<const uint32_t*>(&data[0]))
-		// 							   : *reinterpret_cast<const uint32_t*>(&data[0]);
-
-		// uint16_t time_mid = needs_swap ? swap_endian_short(*reinterpret_cast<const uint16_t*>(&data[4]))
-		// 							   : *reinterpret_cast<const uint16_t*>(&data[4]);
-
-		// uint16_t time_hi_and_version = needs_swap
-		// 								   ? swap_endian_short(*reinterpret_cast<const
-		// uint16_t*>(&data[6])) 								   : *reinterpret_cast<const uint16_t*>(&data[6]);
 
 		uint32_t time_low;
 		std::memcpy(&time_low, &data[0], sizeof(time_low));
@@ -602,34 +609,32 @@ public:
 		if(needs_swap)
 			time_hi_and_version = swap_endian_short(time_hi_and_version);
 
-		// Fill the UUID string
+		// Encode `time_low`
 		size_t index = 0;
-
-		// Encode `time_low` (4 bytes)
 		for(int i = 7; i >= 0; --i)
 		{
 			uustr[index++] = encoder[(time_low >> (i * 4)) & 0x0F];
 		}
 		uustr[8] = '-';
 
-		// Encode `time_mid` (2 bytes)
-		index = 9; // Move past the first dash
+		// Encode `time_mid`
+		index = 9;
 		for(int i = 3; i >= 0; --i)
 		{
 			uustr[index++] = encoder[(time_mid >> (i * 4)) & 0x0F];
 		}
 		uustr[13] = '-';
 
-		// Encode `time_hi_and_version` (2 bytes)
-		index = 14; // Move past the second dash
+		// Encode `time_hi_and_version`
+		index = 14;
 		for(int i = 3; i >= 0; --i)
 		{
 			uustr[index++] = encoder[(time_hi_and_version >> (i * 4)) & 0x0F];
 		}
 		uustr[18] = '-';
 
-		// Encode `clock_seq_hi_and_reserved` and `clock_seq_low` (2 bytes)
-		index = 19; // Move past the third dash
+		// Encode `clock_seq`
+		index = 19;
 		for(int i = 0; i < 2; ++i)
 		{
 			uustr[index++] = encoder[(data[8 + i] >> 4) & 0x0F];
@@ -637,8 +642,8 @@ public:
 		}
 		uustr[23] = '-';
 
-		// Encode `node` (6 bytes)
-		index = 24; // Move past the fourth dash
+		// Encode `node`
+		index = 24;
 		for(int i = 10; i < 16; ++i)
 		{
 			uustr[index++] = encoder[(data[i] >> 4) & 0x0F];
@@ -648,20 +653,10 @@ public:
 		return uustr;
 	}
 
-private:
 	std::array<value_type, 16> data{{0}};
 
 	friend bool operator==(uuid const& lhs, uuid const& rhs) noexcept;
 	friend bool operator<(uuid const& lhs, uuid const& rhs) noexcept;
-
-	template <class Elem, class Traits>
-	friend std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& s, uuid const& id);
-
-	template <class CharT, class Traits, class Allocator>
-	friend std::basic_string<CharT, Traits, Allocator> to_string(uuid const& id);
-
-	template <class CharT, class Traits, class Allocator>
-	friend std::basic_string<CharT, Traits, Allocator> to_string_upper(uuid const& id);
 
 	friend std::hash<uuid>;
 };
@@ -685,16 +680,16 @@ private:
 	return lhs.data < rhs.data;
 }
 
-template <class CharT, class Traits, class Allocator>
+template <class CharT = char, class Traits = std::char_traits<CharT>, class Allocator = std::allocator<CharT>>
 [[nodiscard]] inline std::basic_string<CharT, Traits, Allocator> to_string(uuid const& id)
 {
-	return id.to_string_impl<CharT, Traits, Allocator, 17>(detail::guid_encoder<CharT>);
+	return id.to_string<CharT, Traits, Allocator>();
 }
 
-template <class CharT, class Traits, class Allocator>
+template <class CharT = char, class Traits = std::char_traits<CharT>, class Allocator = std::allocator<CharT>>
 [[nodiscard]] inline std::basic_string<CharT, Traits, Allocator> to_string_upper(uuid const& id)
 {
-	return id.to_string_impl<CharT, Traits, Allocator, 17>(detail::guid_encoder_upper<CharT>);
+	return id.to_string_upper<CharT, Traits, Allocator>();
 }
 
 template <class Elem, class Traits>
